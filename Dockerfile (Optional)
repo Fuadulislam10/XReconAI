@@ -1,0 +1,17 @@
+FROM python:3.9-slim
+
+RUN apt-get update && apt-get install -y \
+    git curl unzip \
+    && pip install --upgrade pip
+
+# Tools: subfinder, httpx, nuclei
+RUN curl -sSfL https://git.io/subfinder.sh | bash
+RUN curl -sSfL https://git.io/httpx.sh | bash
+RUN curl -sSfL https://git.io/nuclei.sh | bash
+
+COPY . /app
+WORKDIR /app
+
+RUN pip install openai pyyaml
+
+ENTRYPOINT ["python3", "main.py"]
