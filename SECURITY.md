@@ -59,4 +59,6 @@ The maintainers are not responsible for misuse by third parties.
 ---
 
 ## 🙏 Acknowledgements
-We appreciate the security research community for helping improve XReconAI responsibly.
+- We appreciate the security research community for helping improve XReconAI responsibly.
+  
+🔐 For security issues, please see [SECURITY.md](SECURITY.md).
