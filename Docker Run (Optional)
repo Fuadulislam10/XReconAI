@@ -1,2 +1,0 @@
-docker build -t xreconai .
-docker run --rm -v $(pwd)/outputs:/app/outputs xreconai --domain example.com
