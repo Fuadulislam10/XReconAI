@@ -1,97 +1,78 @@
-# XReconAI: Fully Autonomous Offensive Security Toolkit
-
-import os
-import subprocess
-import argparse
 import yaml
-import openai
-from datetime import datetime
+import sys
+from core.scope_validator import validate_scope
+from recon.passive import run_passive_recon
+from recon.active import run_active_scan
+from core.correlator import correlate_findings
+from ai.analyzer import run_ai_analysis
+from core.risk_engine import calculate_risk
+from ai.reporter import generate_report
 
-# Load configuration
-def load_config():
-    with open("config.yaml", "r") as f:
-        return yaml.safe_load(f)
 
-# Recon using subfinder
-def run_recon(domain):
-    output_file = f"outputs/{domain}_subs.txt"
-    os.makedirs("outputs", exist_ok=True)
-    cmd = f"subfinder -d {domain} -silent -o {output_file}"
-    subprocess.run(cmd, shell=True)
-    return output_file
+def load_config(path="config.yaml"):
+    try:
+        with open(path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        print(f"[!] Failed to load config: {e}")
+        sys.exit(1)
 
-# Liveness check using httpx
-def check_live_hosts(subs_file):
-    live_file = subs_file.replace("_subs", "_live")
-    cmd = f"httpx -l {subs_file} -silent -o {live_file}"
-    subprocess.run(cmd, shell=True)
-    return live_file
 
-# Vulnerability scan using nuclei
-def run_nuclei(live_file):
-    results_file = live_file.replace("_live", "_nuclei")
-    cmd = f"nuclei -l {live_file} -o {results_file}"
-    subprocess.run(cmd, shell=True)
-    return results_file
-
-# Exploit SQLi using sqlmap
-def run_sqlmap(urls_file):
-    with open(urls_file, "r") as f:
-        targets = f.read().splitlines()
-    for url in targets:
-        cmd = f"sqlmap -u {url} --batch --level=2 --risk=2 --dump"
-        subprocess.run(cmd, shell=True)
-
-# Use GPT to explain the scan findings
-def gpt_explain(findings_file, api_key):
-    openai.api_key = api_key
-    with open(findings_file, "r") as f:
-        findings = f.read()
-    prompt = f"Explain the following web vulnerabilities in human-readable format:\n{findings}"
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    explanation = response["choices"][0]["message"]["content"]
-    output_file = findings_file.replace(".txt", "_explained.txt")
-    with open(output_file, "w") as f:
-        f.write(explanation)
-    return output_file
-
-# Generate report
-def generate_report(domain, findings, explanation):
-    report_file = f"outputs/{domain}_report.md"
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(report_file, "w") as f:
-        f.write(f"# XReconAI Report for {domain}\n")
-        f.write(f"**Scan Time:** {now}\n\n")
-        f.write("## Raw Findings\n")
-        with open(findings, "r") as raw:
-            f.write("```")
-            f.write(raw.read())
-            f.write("```")
-        f.write("\n\n## AI Explanation\n")
-        with open(explanation, "r") as exp:
-            f.write(exp.read())
-    return report_file
-
-# Main workflow
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--domain", required=True, help="Target domain to scan")
-    args = parser.parse_args()
+    print("\n[+] Starting XReconAI...\n")
 
+    # 1️⃣ Load config
     config = load_config()
-    api_key = config.get("openai_api_key")
 
-    subs = run_recon(args.domain)
-    live = check_live_hosts(subs)
-    findings = run_nuclei(live)
-    run_sqlmap(live)
-    explained = gpt_explain(findings, api_key)
-    report = generate_report(args.domain, findings, explained)
+    target = config["target"]["primary_domain"]
+    print(f"[+] Target: {target}")
 
-    print(f"[+] Scan complete. Report saved to: {report}")
+    # 2️⃣ Scope & legal validation
+    print("[+] Validating scope...")
+    if not validate_scope(target, config):
+        print("[!] Target is out of scope. Aborting.")
+        sys.exit(1)
+
+    print("[+] Scope validation passed.")
+
+    # 3️⃣ Passive Recon (Always safe)
+    print("[+] Running passive reconnaissance...")
+    passive_results = run_passive_recon(target, config)
+
+    all_findings = passive_results
+
+    # 4️⃣ Active Scan (Only if allowed)
+    if not config["project"].get("passive_only", True):
+        if config["scan"]["active"]["enabled"]:
+            print("[+] Running active scanning...")
+            active_results = run_active_scan(target, config)
+            all_findings.extend(active_results)
+
+    # 5️⃣ Normalize & correlate findings
+    print("[+] Correlating findings...")
+    normalized_findings = correlate_findings(all_findings)
+
+    if not normalized_findings:
+        print("[+] No meaningful findings detected.")
+        sys.exit(0)
+
+    # 6️⃣ AI analysis pipeline
+    print("[+] Running AI analysis...")
+    ai_results = run_ai_analysis(normalized_findings, config)
+
+    # 7️⃣ Risk scoring
+    print("[+] Calculating risk scores...")
+    scored_findings = []
+    for finding in ai_results:
+        scored = calculate_risk(finding, config)
+        scored_findings.append(scored)
+
+    # 8️⃣ Generate report
+    print("[+] Generating report...")
+    generate_report(scored_findings, config)
+
+    print("\n[✓] XReconAI completed successfully.\n")
+
 
 if __name__ == "__main__":
     main()
