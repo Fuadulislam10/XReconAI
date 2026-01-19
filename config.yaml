@@ -1,1 +1,50 @@
-openai_api_key: "sk-..."   # your OpenAI API Key add this
+project:
+  name: XReconAI
+  version: 1.1.0-beta
+  mode: bugbounty
+  passive_only: true
+  debug: false
+
+target:
+  primary_domain: example.com
+  scope_file: scope.txt
+  out_of_scope:
+    - dev.example.com
+    - test.example.com
+
+legal:
+  require_scope_validation: true
+  abort_on_out_of_scope: true
+  show_warning_banner: true
+  confirmation_required: false
+
+recon:
+  passive:
+    enabled: true
+    timeout_seconds: 10
+
+scan:
+  active:
+    enabled: false
+    rate_limit: 5
+    depth: low
+
+ai:
+  enabled: true
+  provider: openai
+  model: gpt-4.1-mini
+  temperature: 0.2
+  reasoning_mode: conservative
+  confidence_threshold:
+    report_only_if_above: 65
+
+report:
+  format:
+    - markdown
+  output_dir: reports/output
+  style: hackerone
+  language: english
+
+logging:
+  level: info
+  redact_sensitive_data: true
