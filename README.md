@@ -1,7 +1,6 @@
 <p align="center">
-  <img src="xreconai-banner.png" alt="XReconAI Banner" />
+  <img src="xreconai-banner.png" alt="XReconAI Banner">
 </p>
-
 # 🔍 XReconAI
 
 **AI-Powered Autonomous Security Reconnaissance & Analysis Framework**
