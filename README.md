@@ -167,7 +167,7 @@ The user is fully responsible for compliance with all applicable laws and progra
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/yourusername/XReconAI.git
+git clone https://github.com/Fuadulislam10/XReconAI.git
 cd XReconAI
 pip install -r requirements.txt
 ```
