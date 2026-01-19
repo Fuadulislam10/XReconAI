@@ -184,7 +184,70 @@ pip install -r requirements.txt
 ```bash
 python main.py --config config.yaml
 ```
+Basic (default: passive-only)
+```bash
+python main.py
+```
+Use a custom config
+```bash
+python main.py --config config.yaml
+```
+Run on a different target (override config target)
+```bash
+python main.py --target example.com
+```
+Force passive-only mode (recommended for bug bounty)
+```bash
+python main.py --target example.com --passive-only
+```
+Enable active scan (ONLY if authorized)
+```bash
+python main.py --target example.com --no-passive-only --active
+```
+Change AI confidence threshold
+```bash
+python main.py --target example.com --confidence 70
+```
 
+✅ FAQ (Add to README)
+❓ Why is the banner image not showing?
+
+Make sure the image file exists in the repo and the path matches:
+
+xreconai-banner.png (recommended in repo root)
+
+❓ Tool aborts immediately
+
+Your target is likely out of scope. Check:
+
+scope.txt
+
+config.yaml -> target.out_of_scope
+
+❓ No findings in report
+
+Possible reasons:
+
+Only informational items found
+
+AI confidence threshold is too high (try --confidence 55)
+
+❓ Active scanning doesn’t run
+
+You must set:
+```yaml
+--no-passive-only --active
+or in config:
+
+project:
+  passive_only: false
+scan:
+  active:
+    enabled: true
+```
+
+✅ Recommended Commit Message
+Feat: add CLI flags for target, passive/active mode, and confidence threshold
 Ensure scope is properly defined before execution.
 
 
